@@ -3,6 +3,7 @@ import hmac
 import anthropic
 import streamlit as st
 
+from app.deepseek_extractor import extract_invoice_deepseek, make_client
 from app.extractor import ExtractionError, extract_invoice, sniff_media_type
 from app.review import needs_review
 from app.sheets import GoogleSheetStore
@@ -42,7 +43,27 @@ def get_client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 
 
-def process(files: list[tuple[str, bytes]]) -> None:
+@st.cache_resource
+def get_deepseek_client():
+    return make_client(st.secrets["DEEPSEEK_API_KEY"])
+
+
+def available_engines() -> list[str]:
+    engines = []
+    if "ANTHROPIC_API_KEY" in st.secrets:
+        engines.append("Claude")
+    if "DEEPSEEK_API_KEY" in st.secrets:
+        engines.append("DeepSeek")
+    return engines
+
+
+def run_extraction(engine: str, data: bytes, media_type: str):
+    if engine == "DeepSeek":
+        return extract_invoice_deepseek(data, media_type, get_deepseek_client())
+    return extract_invoice(data, media_type, get_client())
+
+
+def process(files: list[tuple[str, bytes]], engine: str) -> None:
     rows = st.session_state.rows
     failures = []
     progress = st.progress(0.0)
@@ -54,7 +75,7 @@ def process(files: list[tuple[str, bytes]]) -> None:
             failures.append(f"{name}: only PDF, JPG and PNG are supported.")
         else:
             try:
-                extracted = extract_invoice(data, media_type, get_client())
+                extracted = run_extraction(engine, data, media_type)
                 rows.append(new_row(name, extracted.model_dump()))
             except ExtractionError as exc:
                 failures.append(f"{name}: {exc}")
@@ -75,6 +96,19 @@ if "rows" not in st.session_state:
 
 st.title("🧾 Invoice Organizer")
 
+engines = available_engines()
+if not engines:
+    st.error("No ANTHROPIC_API_KEY or DEEPSEEK_API_KEY is set in the app's secrets.")
+    st.stop()
+default = st.secrets.get("default_engine", engines[0])
+engine = st.sidebar.selectbox(
+    "Extraction engine", engines, index=engines.index(default) if default in engines else 0
+)
+if engine == "DeepSeek":
+    st.sidebar.caption("Uploaded invoices are sent to DeepSeek's servers. PDFs are limited to 5 pages.")
+else:
+    st.sidebar.caption("Uploaded invoices are sent to Anthropic's servers.")
+
 key = st.session_state.upload_key
 uploads = st.file_uploader(
     "Upload invoices (PDF, JPG, PNG)",
@@ -91,7 +125,7 @@ if photo is not None:
 
 if st.button("Extract data", type="primary", disabled=not pending):
     with st.spinner("Reading invoices… this can take a little while."):
-        process(pending)
+        process(pending, engine)
     st.rerun()
 
 if st.session_state.pop("saved", False):

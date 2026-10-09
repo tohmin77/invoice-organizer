@@ -11,7 +11,7 @@ Upload invoices (PDF, JPG, PNG) or take a photo. Claude extracts purchaser, sell
 ## Secrets
 
 Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` (git-ignored) and fill in:
-`ANTHROPIC_API_KEY`, `app_password`, `sheet_url`, and the `[gcp_service_account]` fields from the JSON key.
+`ANTHROPIC_API_KEY` and/or `DEEPSEEK_API_KEY`, `app_password`, `sheet_url`, and the `[gcp_service_account]` fields from the JSON key.
 On Streamlit Community Cloud, paste the same content into the app's **Secrets** settings. Never commit real secrets.
 
 ## Run locally
@@ -30,9 +30,13 @@ pytest
 
 Tests use fakes, so no Google or Anthropic access is needed.
 
+## Extraction engines
+
+Provide `ANTHROPIC_API_KEY` (Claude), `DEEPSEEK_API_KEY` (DeepSeek), or both. With both, a sidebar selector switches engines; `default_engine` in secrets sets the starting choice. DeepSeek reads images only, so PDFs are rendered to page images first (max 5 pages). Its model defaults to `deepseek-flash`; override with `DEEPSEEK_MODEL`.
+
 ## Notes
 
 - Rows flagged ⚠️ have a missing purchaser, seller, amount or date, or GST larger than the amount.
 - Saving rewrites the whole sheet; if you also edit the sheet by hand at the same time, the last save wins.
-- Uploaded files are sent to Anthropic for extraction and are not stored; only extracted data goes to the sheet.
+- Uploaded files are sent to the selected engine's provider (Anthropic or DeepSeek) for extraction and are not stored; only extracted data goes to the sheet.
 - The extraction model defaults to `claude-opus-5-5`; set the `INVOICE_MODEL` environment variable to change it.

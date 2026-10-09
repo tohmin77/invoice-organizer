@@ -8,6 +8,8 @@ dependencies = [
     "gspread>=6.0",
     "pandas>=2",
     "pydantic>=2",
+    "openai>=1.0",
+    "pymupdf>=1.24",
 ]
 
 [project.optional-dependencies]

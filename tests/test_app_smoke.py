@@ -24,3 +24,21 @@ def test_unlocked_app_renders_table(monkeypatch):
     assert not at.exception
     assert len(at.session_state.rows) == 1
     assert at.title[0].value.endswith("Invoice Organizer")
+
+
+def test_engine_switch_lists_both_engines(monkeypatch):
+    from app import sheets
+
+    store = sheets.MemoryStore()
+    store.url = "https://docs.google.com/spreadsheets/d/x"
+    monkeypatch.setattr(sheets, "GoogleSheetStore", lambda *a, **k: store)
+
+    at = AppTest.from_file("../streamlit_app.py", default_timeout=20)
+    for k, v in {"app_password": "pw", "gcp_service_account": {}, "sheet_url": store.url,
+                 "ANTHROPIC_API_KEY": "a", "DEEPSEEK_API_KEY": "b", "default_engine": "DeepSeek"}.items():
+        at.secrets[k] = v
+    at.run()
+    at.text_input[0].set_value("pw").run()
+    assert not at.exception
+    assert at.sidebar.selectbox[0].options == ["Claude", "DeepSeek"]
+    assert at.sidebar.selectbox[0].value == "DeepSeek"
