@@ -1,0 +1,22 @@
+[project]
+name = "invoice-organizer"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=1.0",
+    "fastapi",
+    "uvicorn",
+    "jinja2",
+    "python-multipart",
+    "python-dotenv",
+    "pydantic>=2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
