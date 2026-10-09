@@ -20,6 +20,16 @@ class ExtractionError(Exception):
     pass
 
 
+def sniff_media_type(data: bytes) -> str | None:
+    if data.startswith(b"%PDF-"):
+        return "application/pdf"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    return None
+
+
 def _content_block(data: bytes, media_type: str) -> dict:
     kind = "document" if media_type == "application/pdf" else "image"
     return {

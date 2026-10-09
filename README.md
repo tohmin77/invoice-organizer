@@ -1,23 +1,26 @@
-# Invoice Organizer
+# Invoice Organizer (Streamlit)
 
-Upload invoices (PDF, JPG, PNG), have Claude extract purchaser, seller, items, amount, GST and date, edit the results in a table, and download them as CSV.
+Upload invoices (PDF, JPG, PNG) or take a photo. Claude extracts purchaser, seller, items, amount, GST and date. Results are edited in a table and saved to a Google Sheet; CSV download is available too.
 
-## Setup
+## One-time Google setup
+
+1. In Google Cloud Console, create a project and enable the **Google Sheets API**.
+2. Create a **service account** and download its JSON key.
+3. Create a blank Google Sheet and share it (Editor) with the service account's `client_email`.
+
+## Secrets
+
+Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` (git-ignored) and fill in:
+`ANTHROPIC_API_KEY`, `app_password`, `sheet_url`, and the `[gcp_service_account]` fields from the JSON key.
+On Streamlit Community Cloud, paste the same content into the app's **Secrets** settings. Never commit real secrets.
+
+## Run locally
 
 ```sh
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e '.[dev]'
-cp .env.example .env   # then put your ANTHROPIC_API_KEY in .env
+streamlit run streamlit_app.py
 ```
-
-## Run
-
-```sh
-uvicorn app.main:create_app --factory --host 127.0.0.1
-```
-
-Open http://127.0.0.1:8000. Data is stored in `data/invoices.db`. The extraction model defaults to `claude-opus-5-5`; set `INVOICE_MODEL` in `.env` to use another.
 
 ## Test
 
@@ -25,9 +28,11 @@ Open http://127.0.0.1:8000. Data is stored in `data/invoices.db`. The extraction
 pytest
 ```
 
-Tests mock the Claude call, so they need no API key.
+Tests use fakes, so no Google or Anthropic access is needed.
 
 ## Notes
 
-- Uploaded files are sent to Anthropic's API for extraction and are not kept locally; only extracted data and the filename are stored.
-- Files are limited to 10 MB. Fields not found on an invoice are left blank.
+- Rows flagged ⚠️ have a missing purchaser, seller, amount or date, or GST larger than the amount.
+- Saving rewrites the whole sheet; if you also edit the sheet by hand at the same time, the last save wins.
+- Uploaded files are sent to Anthropic for extraction and are not stored; only extracted data goes to the sheet.
+- The extraction model defaults to `claude-opus-5-5`; set the `INVOICE_MODEL` environment variable to change it.
