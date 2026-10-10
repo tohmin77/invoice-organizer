@@ -5,7 +5,6 @@ import streamlit as st
 
 from app.deepseek_extractor import extract_invoice_deepseek, make_client
 from app.extractor import ExtractionError, extract_invoice, sniff_media_type
-from app.drive import DriveError, DriveStore, drive_filename, next_invoice_id
 from app.review import needs_review
 from app.sheets import GoogleSheetStore
 from app.table import apply_edits, build_csv, new_row, rows_to_df
@@ -37,14 +36,6 @@ def require_password() -> None:
 @st.cache_resource
 def get_store() -> GoogleSheetStore:
     return GoogleSheetStore(st.secrets["gcp_service_account"], st.secrets["sheet_url"])
-
-
-@st.cache_resource
-def get_drive() -> DriveStore | None:
-    folder_id = st.secrets.get("drive_folder_id")
-    if not folder_id:
-        return None
-    return DriveStore(st.secrets["gcp_service_account"], folder_id)
 
 
 @st.cache_resource
@@ -85,17 +76,7 @@ def process(files: list[tuple[str, bytes]], engine: str) -> None:
         else:
             try:
                 extracted = run_extraction(engine, data, media_type)
-                row = new_row(name, extracted.model_dump())
-                row["invoice_id"] = next_invoice_id(rows)
-                rows.append(row)
-                drive = get_drive()
-                if drive:
-                    try:
-                        row["drive_url"] = drive.upload(
-                            drive_filename(row["invoice_id"], media_type), data, media_type
-                        )
-                    except (DriveError, OSError) as exc:
-                        failures.append(f"{name}: saved as {row['invoice_id']} but not uploaded to Drive ({exc}).")
+                rows.append(new_row(name, extracted.model_dump()))
             except ExtractionError as exc:
                 failures.append(f"{name}: {exc}")
         progress.progress(i / len(files))
@@ -164,13 +145,11 @@ edited = st.data_editor(
     hide_index=True,
     width="stretch",
     key=f"editor{st.session_state.editor_v}-{review_only}",
-    column_order=["review", "invoice_id", "filename", "purchaser", "seller", "items", "amount", "gst", "date", "drive_url"],
-    disabled=["review", "invoice_id", "filename", "drive_url"],
+    column_order=["review", "filename", "purchaser", "seller", "items", "amount", "gst", "date"],
+    disabled=["review", "filename"],
     column_config={
         "review": st.column_config.TextColumn("", width="small"),
-        "invoice_id": "Invoice ID",
         "filename": "File",
-        "drive_url": st.column_config.LinkColumn("Drive", display_text="Open"),
         "items": "Items / services",
         "amount": st.column_config.NumberColumn("Amount", format="%.2f"),
         "gst": st.column_config.NumberColumn("GST", format="%.2f"),

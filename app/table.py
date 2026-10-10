@@ -9,8 +9,8 @@ from pydantic import ValidationError
 from .review import review_reasons
 from .schemas import FIELDS, InvoiceUpdate
 
-COLUMNS = ("id", "filename", *FIELDS, "created_at", "invoice_id", "drive_url")
-TEXT_COLUMNS = ("invoice_id", "filename", "purchaser", "seller", "items", "date")
+COLUMNS = ("id", "filename", *FIELDS, "created_at")
+TEXT_COLUMNS = ("filename", "purchaser", "seller", "items", "date")
 FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
 
@@ -20,8 +20,6 @@ def new_row(filename: str, data: dict) -> dict:
         "filename": filename,
         **{f: data.get(f) for f in FIELDS},
         "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
-        "invoice_id": None,
-        "drive_url": None,
     }
 
 
@@ -79,7 +77,7 @@ def _csv_safe(value):
 
 
 def build_csv(rows: list[dict]) -> str:
-    cols = ("invoice_id", "filename", *FIELDS)
+    cols = ("filename", *FIELDS)
     out = io.StringIO()
     writer = csv.writer(out)
     writer.writerow(cols)

@@ -41,8 +41,8 @@ def test_hidden_rows_survive_filtered_edit():
 def test_new_row_added_and_blank_ignored():
     rows = make_rows()
     df = rows_to_df(rows)
-    df.loc[len(df)] = ["", None, None, "Me", "Shop", None, 5.0, None, "2026-02-03", None, None, None]
-    df.loc[len(df)] = [""] + [None] * 11
+    df.loc[len(df)] = ["", None, None, "Me", "Shop", None, 5.0, None, "2026-02-03", None]
+    df.loc[len(df)] = ["", None, None, None, None, None, None, None, None, None]
     result, errors = apply_edits(rows, {r["id"] for r in rows}, df)
     assert errors == []
     assert len(result) == 4
@@ -60,5 +60,5 @@ def test_invalid_values_rejected():
 def test_csv_formula_guard():
     rows = [new_row("a.pdf", {**FULL, "seller": "=HYPERLINK(1)", "amount": -5.0})]
     out = list(csv.reader(io.StringIO(build_csv(rows))))
-    assert out[0] == ["invoice_id", "filename", "purchaser", "seller", "items", "amount", "gst", "date"]
-    assert out[1][3] == "'=HYPERLINK(1)" and out[1][5] == "-5.0"
+    assert out[0] == ["filename", "purchaser", "seller", "items", "amount", "gst", "date"]
+    assert out[1][2] == "'=HYPERLINK(1)" and out[1][4] == "-5.0"

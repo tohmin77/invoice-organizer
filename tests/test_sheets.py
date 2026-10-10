@@ -50,11 +50,4 @@ def test_save_writes_raw_and_clears_leftover_rows():
     values, cell, mode = ws.written
     assert mode == "RAW" and cell == "A1"
     assert values[0] == list(COLUMNS) and values[1][3] == "=1+1"
-    assert ws.cleared == ["A3:K10"]
-
-
-def test_load_old_sheet_without_new_columns():
-    header = list(COLUMNS[:9])
-    data = ["abc123", "a.pdf", "P", "S", "", 12.5, "", "2026-01-02", "2026-01-03 10:00"]
-    rows = store_with(FakeWorksheet([header, data])).load()
-    assert rows[0]["id"] == "abc123" and rows[0]["invoice_id"] is None and rows[0]["drive_url"] is None
+    assert ws.cleared == ["A3:I10"]

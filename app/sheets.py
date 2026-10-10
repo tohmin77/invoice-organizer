@@ -42,13 +42,12 @@ class GoogleSheetStore:
 
     def load(self) -> list[dict]:
         values = self._ws.get_all_values(value_render_option="UNFORMATTED_VALUE")
-        if not values or "id" not in values[0] or tuple(values[0][:2]) != COLUMNS[:2]:
+        if not values or tuple(values[0]) != COLUMNS:
             return []
-        header = list(values[0])
         rows = []
         for raw in values[1:]:
-            by_name = dict(zip(header, list(raw) + [""] * (len(header) - len(raw))))
-            row = {c: (None if by_name.get(c, "") == "" else by_name[c]) for c in COLUMNS}
+            raw = list(raw) + [""] * (len(COLUMNS) - len(raw))
+            row = {c: (None if v == "" else v) for c, v in zip(COLUMNS, raw)}
             for c in NUMERIC:
                 row[c] = _to_number(row[c])
             if row["id"] is not None:
