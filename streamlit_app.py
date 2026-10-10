@@ -99,13 +99,7 @@ def process(files: list[tuple[str, bytes]], engine: str) -> None:
             except ExtractionError as exc:
                 failures.append(f"{name}: {exc}")
         progress.progress(i / len(files))
-    try:
-        get_store().save(rows)
-    except Exception as exc:
-        failures.append(
-            f"Extracted rows are shown below but could not be saved to Google Sheets ({exc}). "
-            "Click Save changes to retry."
-        )
+    get_store().save(rows)
     st.session_state.upload_key += 1
     st.session_state.editor_v += 1
     st.session_state.messages = failures
