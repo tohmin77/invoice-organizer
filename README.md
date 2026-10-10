@@ -34,9 +34,13 @@ Tests use fakes, so no Google or Anthropic access is needed.
 
 Provide `ANTHROPIC_API_KEY` (Claude), `DEEPSEEK_API_KEY` (DeepSeek), or both. With both, a sidebar selector switches engines; `default_engine` in secrets sets the starting choice. DeepSeek reads images only, so PDFs are rendered to page images first (max 5 pages). Its model defaults to `deepseek-flash`; override with `DEEPSEEK_MODEL`.
 
+## Invoice IDs and Google Drive
+
+Every extracted invoice gets an ID like `20261010-001` (upload date + daily counter). To also store the originals, set `drive_folder_id` in secrets to a folder inside a **Shared Drive** and add the service account as a member (Contributor or higher). Files are saved as `Invoice-<ID>.pdf/.jpg/.png` and linked from the table. Enable the **Google Drive API** in the same Cloud project. Service accounts have no storage quota of their own, so a folder in a personal My Drive will not work. Without `drive_folder_id`, IDs are still assigned but nothing is uploaded.
+
 ## Notes
 
 - Rows flagged ⚠️ have a missing purchaser, seller, amount or date, or GST larger than the amount.
 - Saving rewrites the whole sheet; if you also edit the sheet by hand at the same time, the last save wins.
-- Uploaded files are sent to the selected engine's provider (Anthropic or DeepSeek) for extraction and are not stored; only extracted data goes to the sheet.
+- Uploaded files are sent to the selected engine's provider (Anthropic or DeepSeek) for extraction and are not stored by the app; only extracted data goes to the sheet (plus the original file in Drive if `drive_folder_id` is set).
 - The extraction model defaults to `claude-opus-5-5`; set the `INVOICE_MODEL` environment variable to change it.

@@ -7,3 +7,7 @@ __pycache__/
 .DS_Store
 .streamlit/secrets.toml
 *.db
+
+# Service account keys
+*.json
+!.devcontainer/devcontainer.json
