@@ -36,7 +36,7 @@ Provide `ANTHROPIC_API_KEY` (Claude), `DEEPSEEK_API_KEY` (DeepSeek), or both. Wi
 
 ## Invoice IDs and Google Drive
 
-Every extracted invoice gets an ID like `20261010-001` (upload date + daily counter). To also store the originals, set `drive_folder_id` in secrets to a folder inside a **Shared Drive** and add the service account as a member (Contributor or higher). Files are saved as `Invoice-<ID>.pdf/.jpg/.png` and linked from the table. Enable the **Google Drive API** in the same Cloud project. Service accounts have no storage quota of their own, so a folder in a personal My Drive will not work. Without `drive_folder_id`, IDs are still assigned but nothing is uploaded.
+Every extracted invoice gets an ID like `Invoice-001-261013` (running number + upload date as YYMMDD). To also store the originals, set `drive_folder_id` in secrets to a folder inside a **Shared Drive** and add the service account as a member (Contributor or higher). Files are saved under that ID, e.g. `Invoice-001-261013.pdf` (or `.jpg`/`.png`) and linked from the table. Enable the **Google Drive API** in the same Cloud project. Service accounts have no storage quota of their own, so a folder in a personal My Drive will not work. Without `drive_folder_id`, IDs are still assigned but nothing is uploaded.
 
 ## Notes
 

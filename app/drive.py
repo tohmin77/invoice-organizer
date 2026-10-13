@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 from datetime import date
 
@@ -7,6 +8,7 @@ from google.oauth2.service_account import Credentials
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
+ID_PATTERN = re.compile(r"Invoice-(\d+)-\d{6}")
 EXTENSIONS = {"application/pdf": ".pdf", "image/png": ".png", "image/jpeg": ".jpg"}
 
 
@@ -15,19 +17,17 @@ class DriveError(Exception):
 
 
 def next_invoice_id(rows: list[dict], today: date | None = None) -> str:
-    """Date-based ID, e.g. 20261010-001; the counter restarts each day."""
-    prefix = (today or date.today()).strftime("%Y%m%d")
+    """Sequential ID with the upload date, e.g. Invoice-001-261013."""
     used = 0
     for row in rows:
-        existing = row.get("invoice_id") or ""
-        head, _, tail = str(existing).partition("-")
-        if head == prefix and tail.isdigit():
-            used = max(used, int(tail))
-    return f"{prefix}-{used + 1:03d}"
+        match = ID_PATTERN.fullmatch(str(row.get("invoice_id") or ""))
+        if match:
+            used = max(used, int(match.group(1)))
+    return f"Invoice-{used + 1:03d}-{(today or date.today()):%y%m%d}"
 
 
 def drive_filename(invoice_id: str, media_type: str) -> str:
-    return f"Invoice-{invoice_id}{EXTENSIONS.get(media_type, '')}"
+    return f"{invoice_id}{EXTENSIONS.get(media_type, '')}"
 
 
 class DriveStore:
