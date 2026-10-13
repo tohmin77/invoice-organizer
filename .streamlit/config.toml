@@ -1,0 +1,3 @@
+[server]
+# Streamlit rejects files over this size (MB) in the browser, before they reach the app
+maxUploadSize = 5

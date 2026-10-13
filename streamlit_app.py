@@ -10,7 +10,7 @@ from app.review import needs_review
 from app.sheets import GoogleSheetStore
 from app.table import apply_edits, build_csv, new_row, rows_to_df
 
-MAX_BYTES = 10 * 1024 * 1024
+MAX_BYTES = 5 * 1024 * 1024
 
 st.set_page_config(page_title="Invoice Organizer", page_icon="🧾", layout="wide")
 
@@ -79,7 +79,7 @@ def process(files: list[tuple[str, bytes]], engine: str) -> None:
     for i, (name, data) in enumerate(files, start=1):
         media_type = sniff_media_type(data)
         if len(data) > MAX_BYTES:
-            failures.append(f"{name}: larger than 10 MB.")
+            failures.append(f"{name}: larger than 5 MB.")
         elif media_type is None:
             failures.append(f"{name}: only PDF, JPG and PNG are supported.")
         else:
@@ -136,7 +136,7 @@ else:
 
 key = st.session_state.upload_key
 uploads = st.file_uploader(
-    "Upload invoices (PDF, JPG, PNG)",
+    "Upload invoices (PDF, JPG, PNG, max 5 MB each)",
     type=["pdf", "jpg", "jpeg", "png"],
     accept_multiple_files=True,
     key=f"files{key}",
