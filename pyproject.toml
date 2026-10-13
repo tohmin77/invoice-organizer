@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "google-auth-oauthlib"]
 
 [tool.setuptools]
 packages = ["app"]

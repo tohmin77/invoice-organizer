@@ -44,7 +44,8 @@ def get_drive() -> DriveStore | None:
     folder_id = st.secrets.get("drive_folder_id")
     if not folder_id:
         return None
-    return DriveStore(st.secrets["gcp_service_account"], folder_id)
+    oauth = dict(st.secrets["drive_oauth"]) if "drive_oauth" in st.secrets else None
+    return DriveStore(st.secrets["gcp_service_account"], folder_id, oauth)
 
 
 @st.cache_resource

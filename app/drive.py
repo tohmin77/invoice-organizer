@@ -4,9 +4,11 @@ import uuid
 from datetime import date
 
 from google.auth.transport.requests import AuthorizedSession
+from google.oauth2.credentials import Credentials as UserCredentials
 from google.oauth2.service_account import Credentials
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
+TOKEN_URI = "https://oauth2.googleapis.com/token"
 UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
 ID_PATTERN = re.compile(r"Invoice-(\d+)-\d{6}")
 EXTENSIONS = {"application/pdf": ".pdf", "image/png": ".png", "image/jpeg": ".jpg"}
@@ -26,17 +28,40 @@ def next_invoice_id(rows: list[dict], today: date | None = None) -> str:
     return f"Invoice-{used + 1:03d}-{(today or date.today()):%y%m%d}"
 
 
+def parse_folder_id(value: str) -> str:
+    """Accept a bare ID, an ID with URL parameters, or a full folder URL."""
+    value = str(value).strip()
+    if "/folders/" in value:
+        value = value.split("/folders/", 1)[1]
+    return re.split(r"[/?&#]", value, maxsplit=1)[0]
+
+
 def drive_filename(invoice_id: str, media_type: str) -> str:
     return f"{invoice_id}{EXTENSIONS.get(media_type, '')}"
 
 
 class DriveStore:
-    """Uploads files into a folder of a Shared Drive using the service account."""
+    """Uploads files into a Drive folder.
 
-    def __init__(self, service_account_info: dict, folder_id: str):
-        creds = Credentials.from_service_account_info(dict(service_account_info), scopes=SCOPES)
+    With `oauth` (client_id, client_secret, refresh_token) files are uploaded as the
+    user and count against their storage, so a normal My Drive folder works.
+    Otherwise the service account is used, which only works in a Shared Drive.
+    """
+
+    def __init__(self, service_account_info: dict | None, folder_id: str, oauth: dict | None = None):
+        if oauth:
+            creds = UserCredentials(
+                None,
+                refresh_token=oauth["refresh_token"],
+                token_uri=TOKEN_URI,
+                client_id=oauth["client_id"],
+                client_secret=oauth["client_secret"],
+                scopes=SCOPES,
+            )
+        else:
+            creds = Credentials.from_service_account_info(dict(service_account_info), scopes=SCOPES)
         self._session = AuthorizedSession(creds)
-        self._folder_id = folder_id
+        self._folder_id = parse_folder_id(folder_id)
 
     def upload(self, name: str, data: bytes, media_type: str) -> str:
         boundary = uuid.uuid4().hex

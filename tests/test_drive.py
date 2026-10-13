@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from app.drive import DriveError, DriveStore, drive_filename, next_invoice_id
+from app.drive import DriveError, DriveStore, drive_filename, next_invoice_id, parse_folder_id
 
 DAY = date(2026, 10, 10)
 
@@ -59,3 +59,16 @@ def test_upload_sends_name_parent_and_bytes():
 def test_upload_failure_raises():
     with pytest.raises(DriveError):
         store_with(FakeSession(403)).upload("x.pdf", b"1", "application/pdf")
+
+
+def test_parse_folder_id_accepts_urls_and_junk():
+    assert parse_folder_id("abc123") == "abc123"
+    assert parse_folder_id("abc123?dmr=1&ec=wgc-drive-goto.") == "abc123"
+    assert parse_folder_id("https://drive.google.com/drive/folders/abc123?usp=sharing") == "abc123"
+    assert parse_folder_id(" abc123 ") == "abc123"
+
+
+def test_oauth_credentials_used_when_given():
+    store = DriveStore(None, "folder1?x=1", {"client_id": "c", "client_secret": "s", "refresh_token": "r"})
+    assert store._folder_id == "folder1"
+    assert store._session.credentials.refresh_token == "r"
